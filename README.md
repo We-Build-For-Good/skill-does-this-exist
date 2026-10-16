@@ -26,19 +26,19 @@ Every run outputs a clear recommendation:
 
 ### For Claude Code
 ```bash
-git clone https://github.com/webuildforgood/skill-does-this-exist.git ~/.claude/skills/does-this-exist
+git clone https://github.com/We-Build-For-Good/skill-does-this-exist.git ~/.claude/skills/does-this-exist
 ```
 
 ### For Cursor
 ```bash
 mkdir -p .cursor/skills
-git clone https://github.com/webuildforgood/skill-does-this-exist.git .cursor/skills/does-this-exist
+git clone https://github.com/We-Build-For-Good/skill-does-this-exist.git .cursor/skills/does-this-exist
 ```
 
 ### For Antigravity / Open Agent Skills
 ```bash
 mkdir -p .agents/skills
-git clone https://github.com/webuildforgood/skill-does-this-exist.git .agents/skills/does-this-exist
+git clone https://github.com/We-Build-For-Good/skill-does-this-exist.git .agents/skills/does-this-exist
 ```
 
 ---
