@@ -12,6 +12,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 
 const VALID_VERDICTS = ["ADOPT", "FORK-AND-EXTEND", "BUILD"];
 
@@ -379,8 +380,19 @@ export function executeCli(args = process.argv.slice(2)) {
   return 1;
 }
 
-// Direct invocation check
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const exitCode = executeCli();
-  process.exit(exitCode);
+// Direct invocation check (handles symlinks properly)
+if (process.argv[1]) {
+  try {
+    const isMain = import.meta.url === pathToFileURL(process.argv[1]).href ||
+      import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href;
+    if (isMain) {
+      const exitCode = executeCli();
+      process.exit(exitCode);
+    }
+  } catch {
+    if (import.meta.url === `file://${process.argv[1]}`) {
+      const exitCode = executeCli();
+      process.exit(exitCode);
+    }
+  }
 }
