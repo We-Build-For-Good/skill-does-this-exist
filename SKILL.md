@@ -1,6 +1,6 @@
 ---
 name: does-this-exist
-description: An adversarial prior-art and competitive research protocol and CLI. Before speccing or building any net-new product, feature, or commercial tool, the AI actively searches GitHub, package registries, and the web, compiling a verified RESEARCH-BRIEF.md with an actionable verdict: ADOPT, FORK-AND-EXTEND, or BUILD.
+description: "An adversarial prior-art and competitive research protocol and CLI. Before speccing or building any net-new product, feature, or commercial tool, the AI actively searches GitHub, package registries, and the web, compiling a verified RESEARCH-BRIEF.md with an actionable verdict: ADOPT, FORK-AND-EXTEND, or BUILD."
 license: MIT
 metadata:
   author: We Build for Good
