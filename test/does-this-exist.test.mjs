@@ -60,6 +60,7 @@ test("verifyResearchBrief passes on a clean, valid brief", () => {
     verdict: "BUILD",
     disqualifying: "Standard ESLint plugins require complex npm install graph and fail to catch utf-8 typography in markdown.",
     uncertainty: "Custom regex parser might miss rare binary files if not ignored.",
+    cost: "Low: a small linter we can delete in an hour if an existing tool turns out to fit.",
     candidates: [
       {
         name: "eslint-plugin-unicorn",
@@ -151,7 +152,12 @@ test("executeCli generates and verifies file end-to-end", () => {
       "--queries", "release manifest generator, changelog generator node zero dep",
       "--verdict", "BUILD",
       "--disqualifying", "Semantic-release forces automated npm publish; we require strict human sign-off boundary.",
-      "--uncertainty", "Git tag naming conventions must match vX.Y.Z."
+      "--uncertainty", "Git tag naming conventions must match vX.Y.Z.",
+      "--cost", "A week of work duplicated if semantic-release can be configured for manual sign-off.",
+      "--candidates", JSON.stringify([
+        { name: "semantic-release", url: "https://github.com/semantic-release/semantic-release", license: "MIT", status: "Active", fit: "Publishes automatically" },
+        { name: "release-please", url: "https://github.com/googleapis/release-please", license: "Apache-2.0", status: "Active", fit: "Needs GitHub Actions" }
+      ])
     ]);
     assert.equal(genCode, 0);
     assert.ok(fs.existsSync(briefFile));
@@ -161,5 +167,104 @@ test("executeCli generates and verifies file end-to-end", () => {
     assert.equal(verifyCode, 0);
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+function tmp() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "wb4g-prior-art-"));
+}
+
+test("regression: 'generate' with no research cannot pass 'verify --strict'", () => {
+  // 1.1.0 filled gaps with invented candidates (github.com/example/one) and default queries,
+  // so 'generate' followed by 'verify --strict' passed with zero research done.
+  const dir = tmp();
+  const file = path.join(dir, "RESEARCH-BRIEF.md");
+  try {
+    assert.equal(executeCli(["generate", "--output", file]), 0);
+    const content = fs.readFileSync(file, "utf8");
+    assert.equal(content.includes("github.com/example"), false);
+    assert.equal(executeCli(["verify", file, "--strict", "--json"]), 1);
+    assert.match(verifyResearchBrief(content).errors.join(" "), /TODO/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("regression: placeholder and missing candidate URLs are rejected", () => {
+  const brief = generateResearchBrief({
+    problem: "A problem statement that is comfortably over twenty-five characters.",
+    queries: ["one", "two"],
+    verdict: "ADOPT",
+    disqualifying: "n/a",
+    uncertainty: "Only GitHub was searched, not npm.",
+    cost: "Low.",
+    candidates: [
+      { name: "One", url: "https://github.com/example/one", license: "MIT", status: "x", fit: "x" },
+      { name: "Two", url: "not a url", license: "MIT", status: "x", fit: "x" }
+    ]
+  });
+  const result = verifyResearchBrief(brief);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(e => e.includes("placeholder URL")));
+  assert.ok(result.errors.some(e => e.includes("no http(s) URL")));
+});
+
+test("regression: --strict turns warnings into errors", () => {
+  // 1.1.0 parsed --strict but never used it.
+  const brief = generateResearchBrief({
+    problem: "A problem statement that is comfortably over twenty-five characters.",
+    queries: ["only one query"],
+    verdict: "ADOPT",
+    disqualifying: "Not needed for ADOPT.",
+    uncertainty: "Only GitHub was searched, not npm or PyPI.",
+    cost: "Low.",
+    candidates: [
+      { name: "A", url: "https://github.com/a/a", license: "MIT", status: "x", fit: "x" },
+      { name: "B", url: "https://github.com/b/b", license: "MIT", status: "x", fit: "x" }
+    ]
+  });
+  assert.equal(verifyResearchBrief(brief).valid, true);
+  assert.equal(verifyResearchBrief(brief, { strict: true }).valid, false);
+});
+
+test("regression: BUILD without a disqualifying reason fails", () => {
+  const brief = generateResearchBrief({
+    problem: "A problem statement that is comfortably over twenty-five characters.",
+    queries: ["one", "two"],
+    verdict: "BUILD",
+    disqualifying: "None.",
+    uncertainty: "Only GitHub was searched, not npm or PyPI.",
+    cost: "High.",
+    candidates: [
+      { name: "A", url: "https://github.com/a/a", license: "MIT", status: "x", fit: "x" },
+      { name: "B", url: "https://github.com/b/b", license: "MIT", status: "x", fit: "x" }
+    ]
+  });
+  assert.ok(verifyResearchBrief(brief).errors.some(e => e.includes("Verdict is BUILD")));
+});
+
+test("pipes in candidate fields do not break the table", () => {
+  const brief = generateResearchBrief({
+    candidates: [
+      { name: "A", url: "https://github.com/a/a", license: "MIT", status: "ok", fit: "fast | small" },
+      { name: "B", url: "https://github.com/b/b", license: "MIT", status: "ok", fit: "x" }
+    ]
+  });
+  assert.ok(brief.includes("fast \\| small"));
+  assert.equal(verifyResearchBrief(brief).errors.some(e => e.includes("Candidate")), false);
+});
+
+test("CLI: generate refuses to overwrite, rejects bad verdicts and unknown options", () => {
+  const dir = tmp();
+  const file = path.join(dir, "RESEARCH-BRIEF.md");
+  try {
+    assert.equal(executeCli(["generate", "--output", file]), 0);
+    assert.equal(executeCli(["generate", "--output", file]), 2);
+    assert.equal(executeCli(["generate", "--output", file, "--force"]), 0);
+    assert.equal(executeCli(["generate", "--output", path.join(dir, "b.md"), "--verdict", "MAYBE"]), 2);
+    assert.equal(executeCli(["verify", "--bogus"]), 2);
+    assert.equal(executeCli(["verify", path.join(dir, "missing.md")]), 2);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });

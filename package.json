@@ -1,7 +1,7 @@
 {
   "name": "@webuildforgood/skill-does-this-exist",
-  "version": "1.1.0",
-  "description": "Deterministic pre-code prior art engine and research brief generator and verifier.",
+  "version": "2.0.0",
+  "description": "Prior-art research brief generator and checker: refuses unfinished or placeholder briefs.",
   "main": "bin/does-this-exist.mjs",
   "bin": {
     "wb4g-prior-art": "bin/does-this-exist.mjs",
@@ -18,9 +18,11 @@
     "research-engine",
     "pre-code",
     "build-vs-adopt",
-    "agentic-ai",
-    "antigravity"
+    "agentic-ai"
   ],
   "author": "We Build for Good",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
 }

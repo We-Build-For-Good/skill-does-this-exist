@@ -1,10 +1,10 @@
 ---
 name: does-this-exist
-description: "An adversarial prior-art and competitive research protocol and CLI. Before speccing or building any net-new product, feature, or commercial tool, the AI actively searches GitHub, package registries, and the web, compiling a verified RESEARCH-BRIEF.md with an actionable verdict: ADOPT, FORK-AND-EXTEND, or BUILD."
+description: "A prior-art research protocol and CLI. Before speccing or building any net-new product, feature, or tool, the AI searches GitHub, package registries, and the web, writes a RESEARCH-BRIEF.md, and gives a verdict: ADOPT, FORK-AND-EXTEND, or BUILD. The CLI checks the brief is complete and has no placeholders."
 license: MIT
 metadata:
   author: We Build for Good
-  version: "1.1.0"
+  version: "2.0.0"
 ---
 
 # Does This Exist? The Pre-Code Prior Art Engine (wb4g-prior-art)
@@ -15,7 +15,7 @@ Spending twenty minutes finding out what already exists and rigorously justifyin
 
 The default path, every single time, is to build from scratch. Most of the time, something real already exists, has years of edge-case hardening, and the actual job was to build a thin, distinctive layer on top.
 
-`does-this-exist` turns that missing twenty minutes of adversarial research into an unskippable gate, complete with automated CLI verification.
+`does-this-exist` turns that missing twenty minutes into a written brief with a verdict, and a CLI that refuses a brief that is unfinished or padded with placeholders.
 
 ---
 
@@ -63,17 +63,23 @@ Generate and verify the structured brief:
 node bin/does-this-exist.mjs generate \
   --problem "<description>" \
   --queries "<query1>, <query2>" \
+  --candidates candidates.json \
   --verdict "BUILD" \
   --disqualifying "<reasons>" \
-  --uncertainty "<limits>"
+  --uncertainty "<limits>" \
+  --cost "<what it costs if this is wrong>"
 
 # Verify compliance
 node bin/does-this-exist.mjs verify RESEARCH-BRIEF.md
 ```
 
-Output requirements:
-* **Verdict**: ADOPT / FORK-AND-EXTEND / BUILD.
-* **Top 3 Existing Contenders**: Name, repo URL, license, and stars.
-* **Why We Cannot Simply Adopt**: If building, the exact hard constraint that failed.
-* **Cost of Being Wrong**: What happens if we build this from scratch and someone points out the existing tool tomorrow?
-* **Zero Em Dashes**: Invariant enforced across the entire document.
+Pass the candidates you actually evaluated with `--candidates '[{"name":"...","url":"https://...","license":"MIT","status":"...","fit":"..."}]'` (or a path to a JSON file), and the cost of being wrong with `--cost`. Anything you leave out is written as a `TODO:` line, and `verify` fails while any TODO remains. `generate` on its own therefore never produces a passing brief.
+
+What `verify` checks (exit 0 pass, 1 fail, 2 bad options or missing file):
+* No `TODO:` lines left, and no em dashes.
+* A problem statement of at least 25 characters.
+* At least 2 candidates, each with a real http(s) URL (example.com and github.com/example are rejected).
+* A verdict of ADOPT, FORK-AND-EXTEND or BUILD. BUILD also needs a disqualifying reason.
+* Warnings (errors with `--strict`): fewer than 2 queries, a very short uncertainty section, no "Cost of Being Wrong" section, duplicate candidate names.
+
+These are structural checks. They catch an unfinished or placeholder brief; they cannot tell whether the search was thorough. Someone still has to read it.
